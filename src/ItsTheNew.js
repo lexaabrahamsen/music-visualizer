@@ -5,6 +5,7 @@ const ItsTheNew = () => {
   // eslint-disable-next-line no-unused-vars
   const [frames, setFrames] = useState([]);
   // State to display current frame data
+  // eslint-disable-next-line no-unused-vars
   const [currentFrame, setCurrentFrame] = useState('');
   // State to track whether the song is playing
   // eslint-disable-next-line no-unused-vars
