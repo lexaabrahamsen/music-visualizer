@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const ItsTheNew = () => {
   // State to hold frequency data
+  // eslint-disable-next-line no-unused-vars
   const [frames, setFrames] = useState([]);
   // State to display current frame data
   const [currentFrame, setCurrentFrame] = useState('');
   // State to track whether the song is playing
+  // eslint-disable-next-line no-unused-vars
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Refs to maintain the audio context and source across renders
