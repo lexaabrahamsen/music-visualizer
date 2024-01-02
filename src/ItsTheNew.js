@@ -162,7 +162,7 @@ const ItsTheNew = () => {
         }}
       >
         {isPlaying ? (
-          <button class="btn" role="button" onClick={() => togglePlay()}>
+          <button class="btn" onClick={() => togglePlay()}>
             <div class="flex">
               <div class="blob white">
                 <svg
@@ -181,7 +181,7 @@ const ItsTheNew = () => {
             </div>
           </button>
         ) : (
-          <button class="btn" role="button" onClick={() => togglePlay()}>
+          <button class="btn" onClick={() => togglePlay()}>
             <div class="flex">
               <div class="blob white">
                 <svg
