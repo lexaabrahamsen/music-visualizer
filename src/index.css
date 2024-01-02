@@ -11,3 +11,54 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.blob {
+	/* background: black; */
+	border-radius: 50%;
+	/* box-shadow: 0 0 0 0 rgba(0, 0, 0, 1); */
+	/* margin: 10px; */
+	height: 50px;
+	width: 50px;
+	transform: scale(1);
+	animation: pulse-white 2s infinite;
+  /* display: flex; */
+  /* align-items: center; */
+}
+
+.blob.white {
+  background: transparent;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 1);
+  border: 1px solid white;
+  animation: pulse-white 2s infinite;
+  align-items: center;
+
+}
+
+.btn-label {
+  margin-left: 10px;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+@keyframes pulse-white {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
