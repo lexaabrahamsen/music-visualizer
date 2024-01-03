@@ -150,7 +150,7 @@ const MusicVisualizer = () => {
     <div>
       <div
         style={{
-          margin: '35px',
+          // margin: '35px',
           marginLeft: 'auto',
           marginRight: 'auto',
           padding: '10px',
@@ -158,7 +158,7 @@ const MusicVisualizer = () => {
           backgroundImage: `url(../MusicVizualizerHomepageTopShadow.jpg)`,
           borderRadius: '20px',
           backgroundSize: 'cover',
-          height: '90vh',
+          height: '100vh',
           maxWidth: '500px',
         }}
       >
