@@ -1,11 +1,11 @@
 import './App.css';
 import React from 'react';
-import ItsTheNew from './ItsTheNew';
+import MusicVisualizer from './MusicVisualizer';
 
 function App() {
   return (
     <div className="App">
-      <ItsTheNew />
+      <MusicVisualizer />
     </div>
   );
 }

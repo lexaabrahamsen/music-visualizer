@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ItsTheNew = () => {
+const MusicVisualizer = () => {
   // State to hold frequency data
   // eslint-disable-next-line no-unused-vars
   const [frames, setFrames] = useState([]);
@@ -101,7 +101,7 @@ const ItsTheNew = () => {
         const yBottom = canvasHeight;
 
         // Draw the bar from the bottom upward
-        ctx.fillStyle = `rgb(255, 89, 117)`; // Color based on frame value
+        ctx.fillStyle = `rgb(0, 210, 211)`; // Color based on frame value
         ctx.fillRect(x, yBottom - barHeight, barWidth, barHeight);
       });
     };
@@ -154,6 +154,7 @@ const ItsTheNew = () => {
           marginLeft: 'auto',
           marginRight: 'auto',
           padding: '10px',
+          paddingTop: '75px',
           backgroundImage: `url(../MusicVizualizerHomepageTopShadow.jpg)`,
           borderRadius: '20px',
           backgroundSize: 'cover',
@@ -167,14 +168,13 @@ const ItsTheNew = () => {
               <div class="blob white">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="45"
-                  height="45"
+                  width="24"
+                  height="32"
                   fill="#fff"
-                  class="bi bi-stop-circle"
-                  viewBox="0 0 16 16"
+                  class="bi bi-pause-fill"
+                  viewBox="2 0 13 9"
                 >
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                  <path d="M5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5z" />
+                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
                 </svg>
               </div>
               <div class="btn-label">Stop</div>
@@ -186,21 +186,20 @@ const ItsTheNew = () => {
               <div class="blob white">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="45"
-                  height="45"
+                  width="24"
+                  height="32"
                   fill="#fff"
-                  class="bi bi-play-circle"
-                  viewBox="0 0 16 16"
+                  class="bi bi-play-fill"
+                  viewBox="0 0 14 8"
                 >
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                  <path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
+                  <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                 </svg>
               </div>
               <div class="btn-label">Start</div>
             </div>
           </button>
         )}
-        <div style={{ paddingTop: '220px' }}>
+        <div style={{ paddingTop: '100px' }}>
           <canvas id="visualizerCanvas" width="370" height="230"></canvas>
         </div>
       </div>
@@ -208,4 +207,4 @@ const ItsTheNew = () => {
   );
 };
 
-export default ItsTheNew;
+export default MusicVisualizer;
