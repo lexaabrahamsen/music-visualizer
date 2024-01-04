@@ -150,15 +150,14 @@ const MusicVisualizer = () => {
     <div>
       <div
         style={{
-          // margin: '35px',
           marginLeft: 'auto',
           marginRight: 'auto',
           padding: '10px',
-          paddingTop: '75px',
+          paddingTop: '175px',
           backgroundImage: `url(../MusicVizualizerHomepageTopShadow.jpg)`,
           borderRadius: '20px',
           backgroundSize: 'cover',
-          height: '100vh',
+          height: '90vh',
           maxWidth: '500px',
         }}
       >
@@ -199,8 +198,8 @@ const MusicVisualizer = () => {
             </div>
           </button>
         )}
-        <div style={{ paddingTop: '100px' }}>
-          <canvas id="visualizerCanvas" width="370" height="230"></canvas>
+        <div style={{ paddingTop: "200px" }}>
+          <canvas id="visualizerCanvas" width="300" height="230"></canvas>
         </div>
       </div>
     </div>

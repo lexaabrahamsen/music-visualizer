@@ -4,7 +4,7 @@ import MusicVisualizer from './MusicVisualizer';
 
 function App() {
   return (
-    <div className="App" style={{ backgroundColor: 'darkslategrey', padding: '35px' }}>
+    <div className="App" style={{ backgroundColor: 'darkslategrey', paddingTop: '50px', paddingBottom: '50px' }}>
       <MusicVisualizer />
     </div>
   );
