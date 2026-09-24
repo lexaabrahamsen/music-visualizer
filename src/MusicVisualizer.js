@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const THEMES = ['rainbow', 'aqua', 'sunset'];
+const STYLES = ['radial', 'sphere'];
 
 function getColor(theme, value, t) {
   const lightness = 45 + value * 25;
@@ -21,6 +22,7 @@ const MusicVisualizer = () => {
   const [sensitivity, setSensitivity] = useState(1.5);
   const [particleSize, setParticleSize] = useState(3);
   const [theme, setTheme] = useState('rainbow');
+  const [vizStyle, setVizStyle] = useState('radial');
 
   const audioContextRef = useRef(null);
   const sourceRef = useRef(null);
@@ -31,6 +33,7 @@ const MusicVisualizer = () => {
   const sensitivityRef = useRef(sensitivity);
   const particleSizeRef = useRef(particleSize);
   const themeRef = useRef(theme);
+  const vizStyleRef = useRef(vizStyle);
 
   useEffect(() => {
     sensitivityRef.current = sensitivity;
@@ -41,6 +44,9 @@ const MusicVisualizer = () => {
   useEffect(() => {
     themeRef.current = theme;
   }, [theme]);
+  useEffect(() => {
+    vizStyleRef.current = vizStyle;
+  }, [vizStyle]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -141,9 +147,114 @@ const MusicVisualizer = () => {
       ctx.fill();
     };
 
+    // Draws a rotating wireframe sphere whose vertices are displaced
+    // outward by frequency data, giving a spiky, organic, audio-reactive
+    // globe with a rainbow mesh, similar to 3D audio-reactive visualizers.
+    const drawSphere = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const baseR = Math.min(w, h) * 0.26;
+      const currentSensitivity = sensitivityRef.current;
+      const currentSize = particleSizeRef.current;
+      const currentTheme = themeRef.current;
+
+      rotationRef.current += 0.004;
+      const rotation = rotationRef.current;
+
+      const latSegments = 12;
+      const lonSegments = 18;
+      const n = frameData.length;
+      const focal = baseR * 3.2;
+
+      const grid = [];
+      for (let i = 0; i <= latSegments; i++) {
+        const theta = (i / latSegments) * Math.PI;
+        const row = [];
+        for (let j = 0; j < lonSegments; j++) {
+          const phi = (j / lonSegments) * Math.PI * 2 + rotation;
+
+          const x = Math.sin(theta) * Math.cos(phi);
+          const y = Math.cos(theta);
+          const z = Math.sin(theta) * Math.sin(phi);
+
+          // Scatter frequency assignment pseudo-randomly across the grid
+          // (rather than in raster order) so bass-heavy low bins don't all
+          // land on the same ring and pull the sphere into a teardrop.
+          const hash = Math.abs(Math.sin(i * 12.9898 + j * 78.233) * 43758.5453);
+          const freqIndex = Math.floor((hash - Math.floor(hash)) * n);
+          const value = frameData[freqIndex] / 255;
+          const r = baseR * (1 + value * currentSensitivity * 0.6);
+
+          const scale = focal / (focal + z * r);
+          row.push({
+            x: cx + x * r * scale,
+            y: cy + y * r * scale,
+            value,
+            t: j / lonSegments,
+          });
+        }
+        grid.push(row);
+      }
+
+      ctx.lineWidth = Math.max(1, currentSize * 0.5);
+
+      // Longitude lines (pole to pole)
+      for (let j = 0; j < lonSegments; j++) {
+        ctx.beginPath();
+        for (let i = 0; i <= latSegments; i++) {
+          const p = grid[i][j];
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.strokeStyle = getColor(currentTheme, 0.5, j / lonSegments);
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+      }
+
+      // Latitude rings
+      for (let i = 0; i <= latSegments; i++) {
+        ctx.beginPath();
+        for (let j = 0; j <= lonSegments; j++) {
+          const p = grid[i][j % lonSegments];
+          if (j === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.strokeStyle = getColor(currentTheme, 0.5, i / latSegments);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // Glowing highlights at high-energy vertices
+      grid.forEach((row) => {
+        row.forEach((p) => {
+          if (p.value > 0.55) {
+            const color = getColor(currentTheme, p.value, p.t);
+            ctx.save();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, currentSize * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+      });
+    };
+
     const updateFrames = () => {
       analyser.getByteFrequencyData(dataArray);
-      drawRadial(dataArray);
+      if (vizStyleRef.current === 'sphere') {
+        drawSphere(dataArray);
+      } else {
+        drawRadial(dataArray);
+      }
       requestAnimationFrame(updateFrames);
     };
 
@@ -239,6 +350,32 @@ const MusicVisualizer = () => {
             textAlign: 'left',
           }}
         >
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '8px' }}>
+              Visualization Style
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {STYLES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setVizStyle(s)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 0',
+                    borderRadius: '8px',
+                    border: vizStyle === s ? '2px solid #fff' : '1px solid rgba(255,255,255,0.25)',
+                    background: vizStyle === s ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: '#fff',
+                    textTransform: 'capitalize',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {s === 'radial' ? 'Radial Burst' : 'Sphere'}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '6px' }}>
               Sensitivity
