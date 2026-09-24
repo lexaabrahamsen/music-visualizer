@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const THEMES = ['rainbow', 'aqua', 'sunset'];
-const STYLES = ['radial', 'sphere'];
+const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield'];
+const STYLE_LABELS = {
+  radial: 'Radial Burst',
+  sphere: 'Sphere',
+  blob: 'Blob',
+  bars: 'Circular Bars',
+  wave: 'Waveform',
+  starfield: 'Starfield',
+};
 
 function getColor(theme, value, t) {
   const lightness = 45 + value * 25;
@@ -27,6 +35,7 @@ const MusicVisualizer = () => {
   const audioContextRef = useRef(null);
   const sourceRef = useRef(null);
   const rotationRef = useRef(0);
+  const starsRef = useRef(null);
 
   // Refs mirror the live control state so the animation loop (captured once
   // per play session) always reads the current values instead of stale ones.
@@ -248,10 +257,259 @@ const MusicVisualizer = () => {
       });
     };
 
+    // Draws a smooth, filled, morphing blob (no individual dots/wireframe)
+    // by fitting a rounded curve through downsampled frequency points and
+    // filling it with a soft radial gradient.
+    const drawBlob = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const baseRadius = Math.min(w, h) * 0.2;
+      const maxExtra = Math.min(w, h) * 0.24;
+      const currentSensitivity = sensitivityRef.current;
+      const currentTheme = themeRef.current;
+
+      rotationRef.current += 0.001;
+      const rotation = rotationRef.current;
+
+      // Downsample to a small point count so the curve reads as smooth.
+      const pointCount = 28;
+      const n = frameData.length;
+      const points = new Array(pointCount);
+      for (let i = 0; i < pointCount; i++) {
+        const value = frameData[Math.floor((i / pointCount) * n)] / 255;
+        const angle = (i / pointCount) * Math.PI * 2 + rotation;
+        const r = baseRadius + value * currentSensitivity * maxExtra;
+        points[i] = {
+          x: cx + r * Math.cos(angle),
+          y: cy + r * Math.sin(angle),
+          t: i / pointCount,
+        };
+      }
+
+      const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius + maxExtra);
+      gradient.addColorStop(0, getColor(currentTheme, 0.8, 0.5));
+      gradient.addColorStop(1, getColor(currentTheme, 0.2, 0.9));
+
+      ctx.beginPath();
+      const start = mid(points[pointCount - 1], points[0]);
+      ctx.moveTo(start.x, start.y);
+      for (let i = 0; i < pointCount; i++) {
+        const next = points[(i + 1) % pointCount];
+        const m = mid(points[i], next);
+        ctx.quadraticCurveTo(points[i].x, points[i].y, m.x, m.y);
+      }
+      ctx.closePath();
+
+      ctx.save();
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = getColor(currentTheme, 0.6, 0.5);
+      ctx.fillStyle = gradient;
+      ctx.globalAlpha = 0.85;
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    };
+
+    // Draws classic thick rounded bars radiating from a center ring, like
+    // a circular equalizer.
+    const drawBars = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const innerR = Math.min(w, h) * 0.14;
+      const maxLen = Math.min(w, h) * 0.32;
+      const currentSensitivity = sensitivityRef.current;
+      const currentSize = particleSizeRef.current;
+      const currentTheme = themeRef.current;
+
+      rotationRef.current += 0.001;
+      const rotation = rotationRef.current;
+
+      const barCount = 48;
+      const n = frameData.length;
+
+      for (let i = 0; i < barCount; i++) {
+        const value = frameData[Math.floor((i / barCount) * n)] / 255;
+        const angle = (i / barCount) * Math.PI * 2 + rotation;
+        const len = 4 + value * currentSensitivity * maxLen;
+        const barWidth = Math.max(2, currentSize * 1.3);
+        const color = getColor(currentTheme, value, i / barCount);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        const r = barWidth / 2;
+        // rounded rect radiating outward from innerR
+        ctx.beginPath();
+        ctx.moveTo(innerR + r, 0);
+        ctx.arcTo(innerR + len, -barWidth / 2, innerR + len, 0, r);
+        ctx.arcTo(innerR + len, barWidth / 2, innerR, barWidth / 2, r);
+        ctx.arcTo(innerR, barWidth / 2, innerR, -barWidth / 2, r);
+        ctx.arcTo(innerR, -barWidth / 2, innerR + len, -barWidth / 2, r);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+
+    // Draws a flowing horizontal ribbon/waveform with a gradient fill
+    // beneath it, calmer and less "exploded" than the radial styles.
+    const drawWave = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const midY = h / 2;
+      const currentSensitivity = sensitivityRef.current;
+      const currentTheme = themeRef.current;
+      const n = frameData.length;
+
+      rotationRef.current += 0.03;
+      const phase = rotationRef.current;
+
+      const pointCount = 64;
+      const points = new Array(pointCount + 1);
+      for (let i = 0; i <= pointCount; i++) {
+        const value = frameData[Math.floor((i / pointCount) * (n - 1))] / 255;
+        const x = (i / pointCount) * w;
+        const wobble = Math.sin(i * 0.4 + phase) * 6;
+        const y = midY - value * currentSensitivity * h * 0.32 + wobble;
+        points[i] = { x, y, t: i / pointCount };
+      }
+
+      // Gradient fill beneath the line down to the bottom of the canvas
+      const fillGradient = ctx.createLinearGradient(0, 0, w, 0);
+      for (let i = 0; i <= 10; i++) {
+        fillGradient.addColorStop(i / 10, getColor(currentTheme, 0.5, i / 10));
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const cxp = (prev.x + curr.x) / 2;
+        const cyp = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, cxp, cyp);
+      }
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fillStyle = fillGradient;
+      ctx.globalAlpha = 0.25;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const cxp = (prev.x + curr.x) / 2;
+        const cyp = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, cxp, cyp);
+      }
+      ctx.strokeStyle = fillGradient;
+      ctx.lineWidth = 3;
+      ctx.save();
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = getColor(currentTheme, 0.8, 0.5);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    // Draws a drifting field of particles across the whole canvas, each
+    // tied to a fixed frequency bin, giving an atmospheric, less
+    // structured "cosmic dust" look.
+    const drawStarfield = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const currentSensitivity = sensitivityRef.current;
+      const currentSize = particleSizeRef.current;
+      const currentTheme = themeRef.current;
+      const n = frameData.length;
+
+      if (!starsRef.current) {
+        const count = 140;
+        starsRef.current = Array.from({ length: count }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          freqIndex: Math.floor(Math.random() * n),
+          t: Math.random(),
+        }));
+      }
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.fillRect(0, 0, w, h);
+
+      starsRef.current.forEach((star) => {
+        const value = frameData[star.freqIndex] / 255;
+        star.x += star.vx;
+        star.y += star.vy;
+        if (star.x < 0) star.x += w;
+        if (star.x > w) star.x -= w;
+        if (star.y < 0) star.y += h;
+        if (star.y > h) star.y -= h;
+
+        const size = currentSize * 0.5 + value * currentSensitivity * currentSize * 1.5;
+        const color = getColor(currentTheme, value, star.t);
+
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.4 + value * 0.6;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    };
+
     const updateFrames = () => {
       analyser.getByteFrequencyData(dataArray);
-      if (vizStyleRef.current === 'sphere') {
+      const style = vizStyleRef.current;
+      if (style === 'sphere') {
         drawSphere(dataArray);
+      } else if (style === 'blob') {
+        drawBlob(dataArray);
+      } else if (style === 'bars') {
+        drawBars(dataArray);
+      } else if (style === 'wave') {
+        drawWave(dataArray);
+      } else if (style === 'starfield') {
+        drawStarfield(dataArray);
       } else {
         drawRadial(dataArray);
       }
@@ -353,23 +611,23 @@ const MusicVisualizer = () => {
             <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '8px' }}>
               Visualization Style
             </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {STYLES.map((s) => (
                 <button
                   key={s}
                   onClick={() => setVizStyle(s)}
                   style={{
-                    flex: 1,
+                    flex: '1 1 30%',
+                    minWidth: '110px',
                     padding: '8px 0',
                     borderRadius: '8px',
                     border: vizStyle === s ? '2px solid #fff' : '1px solid rgba(255,255,255,0.25)',
                     background: vizStyle === s ? 'rgba(255,255,255,0.15)' : 'transparent',
                     color: '#fff',
-                    textTransform: 'capitalize',
                     cursor: 'pointer',
                   }}
                 >
-                  {s === 'radial' ? 'Radial Burst' : 'Sphere'}
+                  {STYLE_LABELS[s]}
                 </button>
               ))}
             </div>
