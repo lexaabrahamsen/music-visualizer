@@ -292,9 +292,8 @@ const MusicVisualizer = () => {
           padding: '10px',
           paddingTop: '60px',
           paddingBottom: '30px',
-          backgroundImage: `url(../MusicVizualizerHomepageTopShadow.jpg)`,
+          background: 'radial-gradient(circle at 50% 30%, #141414, #000)',
           borderRadius: '20px',
-          backgroundSize: 'cover',
           maxWidth: '500px',
         }}
       >
