@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const THEMES = ['rainbow', 'aqua', 'sunset'];
+const THEMES = ['aqua', 'sunset'];
 const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield', 'spectrum'];
 const STYLE_LABELS = {
   radial: 'Radial Burst',
@@ -14,9 +14,6 @@ const STYLE_LABELS = {
 
 function getColor(theme, value, t) {
   const lightness = 45 + value * 25;
-  if (theme === 'rainbow') {
-    return `hsl(${Math.round(t * 360)}, 90%, ${lightness}%)`;
-  }
   if (theme === 'sunset') {
     const hue = (330 + t * 60) % 360;
     return `hsl(${hue}, 85%, ${lightness}%)`;
@@ -30,7 +27,7 @@ const MusicVisualizer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sensitivity, setSensitivity] = useState(1.5);
   const [particleSize, setParticleSize] = useState(3);
-  const [theme, setTheme] = useState('rainbow');
+  const [theme, setTheme] = useState('aqua');
   const [vizStyle, setVizStyle] = useState('radial');
 
   const audioContextRef = useRef(null);
@@ -665,8 +662,43 @@ const MusicVisualizer = () => {
           </button>
         )}
 
-        <div style={{ paddingTop: '30px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ paddingTop: '30px', display: 'flex', justifyContent: 'center', position: 'relative' }}>
           <canvas id="visualizerCanvas" width="460" height="460"></canvas>
+          {vizStyle === 'bars' && (
+            <button
+              onClick={() => togglePlay()}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '96px',
+                height: '96px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              {isPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" fill="#fff" viewBox="2 0 13 9">
+                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" fill="#fff" viewBox="0 0 14 8">
+                  <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                </svg>
+              )}
+              <span style={{ fontSize: '9px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#fff', opacity: 0.6 }}>
+                {isPlaying ? 'Pause' : 'Play'}
+              </span>
+            </button>
+          )}
         </div>
 
         <div
