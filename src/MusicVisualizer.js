@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const STYLES = ['radial', 'sphere', 'bars', 'wave', 'starfield', 'spectrum'];
+const STYLES = ['radial', 'sphere', 'bars', 'wave', 'spectrum'];
 const STYLE_LABELS = {
   radial: 'Radial Burst',
   sphere: 'Sphere',
   bars: 'Circular Bars',
   wave: 'Waveform',
-  starfield: 'Starfield',
   spectrum: 'Spectrum',
 };
 
@@ -28,7 +27,6 @@ const MusicVisualizer = () => {
   const audioContextRef = useRef(null);
   const sourceRef = useRef(null);
   const rotationRef = useRef(0);
-  const starsRef = useRef(null);
 
   // Refs mirror the live control state so the animation loop (captured once
   // per play session) always reads the current values instead of stale ones.
@@ -366,57 +364,6 @@ const MusicVisualizer = () => {
       ctx.restore();
     };
 
-    // Draws a drifting field of particles across the whole canvas, each
-    // tied to a fixed frequency bin, giving an atmospheric, less
-    // structured "cosmic dust" look.
-    const drawStarfield = (frameData) => {
-      const canvas = document.getElementById('visualizerCanvas');
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      const currentSensitivity = sensitivityRef.current;
-      const currentSize = particleSizeRef.current;
-      const n = frameData.length;
-
-      if (!starsRef.current) {
-        const count = 140;
-        starsRef.current = Array.from({ length: count }, () => ({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          freqIndex: Math.floor(Math.random() * n),
-          t: Math.random(),
-        }));
-      }
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-      ctx.fillRect(0, 0, w, h);
-
-      starsRef.current.forEach((star) => {
-        const value = frameData[star.freqIndex] / 255;
-        star.x += star.vx;
-        star.y += star.vy;
-        if (star.x < 0) star.x += w;
-        if (star.x > w) star.x -= w;
-        if (star.y < 0) star.y += h;
-        if (star.y > h) star.y -= h;
-
-        const size = currentSize * 0.5 + value * currentSensitivity * currentSize * 1.5;
-        const color = getColor(value, star.t);
-
-        ctx.save();
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = color;
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.4 + value * 0.6;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-    };
-
     // Draws a classic linear spectrum analyzer: vertical bars across the
     // full width, colored bottom-to-top per bar, with a faded mirrored
     // reflection below the baseline.
@@ -494,8 +441,6 @@ const MusicVisualizer = () => {
         drawBars(dataArray);
       } else if (style === 'wave') {
         drawWave(dataArray);
-      } else if (style === 'starfield') {
-        drawStarfield(dataArray);
       } else if (style === 'spectrum') {
         drawSpectrum(dataArray);
       } else {
@@ -589,7 +534,7 @@ const MusicVisualizer = () => {
 
         <div
           style={{
-            marginTop: '16px',
+            marginTop: '32px',
             padding: '16px 20px',
             borderRadius: '12px',
             background: '#1a1a24',
