@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const THEMES = ['rainbow', 'aqua', 'sunset'];
-const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield'];
+const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield', 'spectrum'];
 const STYLE_LABELS = {
   radial: 'Radial Burst',
   sphere: 'Sphere',
@@ -9,6 +9,7 @@ const STYLE_LABELS = {
   bars: 'Circular Bars',
   wave: 'Waveform',
   starfield: 'Starfield',
+  spectrum: 'Spectrum',
 };
 
 function getColor(theme, value, t) {
@@ -497,6 +498,65 @@ const MusicVisualizer = () => {
       });
     };
 
+    // Draws a classic linear spectrum analyzer: vertical bars across the
+    // full width, colored bottom-to-top per bar, with a faded mirrored
+    // reflection below the baseline.
+    const drawSpectrum = (frameData) => {
+      const canvas = document.getElementById('visualizerCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const currentSensitivity = sensitivityRef.current;
+      const currentTheme = themeRef.current;
+      const n = frameData.length;
+
+      const barCount = 56;
+      const gap = 3;
+      const barWidth = w / barCount - gap;
+      const baseline = h * 0.68;
+      const maxBarHeight = h * 0.6;
+
+      for (let i = 0; i < barCount; i++) {
+        const value = frameData[Math.floor((i / barCount) * n)] / 255;
+        const barHeight = Math.max(3, value * currentSensitivity * maxBarHeight);
+        const x = i * (barWidth + gap);
+        const color = getColor(currentTheme, value, i / barCount);
+
+        // Main bar, gradient bottom (dim) to top (bright)
+        const grad = ctx.createLinearGradient(0, baseline, 0, baseline - barHeight);
+        grad.addColorStop(0, getColor(currentTheme, value * 0.5, i / barCount));
+        grad.addColorStop(1, color);
+
+        ctx.save();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = color;
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(x, baseline - barHeight, barWidth, barHeight, [3, 3, 0, 0]);
+        ctx.fill();
+        ctx.restore();
+
+        // Faded mirrored reflection below the baseline
+        const reflectHeight = barHeight * 0.4;
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(x, baseline + 4, barWidth, reflectHeight, [0, 0, 3, 3]);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, baseline);
+      ctx.lineTo(w, baseline);
+      ctx.stroke();
+    };
+
     const updateFrames = () => {
       analyser.getByteFrequencyData(dataArray);
       const style = vizStyleRef.current;
@@ -510,6 +570,8 @@ const MusicVisualizer = () => {
         drawWave(dataArray);
       } else if (style === 'starfield') {
         drawStarfield(dataArray);
+      } else if (style === 'spectrum') {
+        drawSpectrum(dataArray);
       } else {
         drawRadial(dataArray);
       }
