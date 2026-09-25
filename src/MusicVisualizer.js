@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const THEMES = ['aqua', 'sunset'];
 const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield', 'spectrum'];
 const STYLE_LABELS = {
   radial: 'Radial Burst',
@@ -12,14 +11,12 @@ const STYLE_LABELS = {
   spectrum: 'Spectrum',
 };
 
-function getColor(theme, value, t) {
+// Single coral/orange accent family, matching the app's UI palette.
+// Lightness follows amplitude; hue drifts slightly warmer across position.
+const ACCENT = '#e8927c';
+function getColor(value, t) {
   const lightness = 45 + value * 25;
-  if (theme === 'sunset') {
-    const hue = (330 + t * 60) % 360;
-    return `hsl(${hue}, 85%, ${lightness}%)`;
-  }
-  // aqua
-  const hue = 175 + t * 40;
+  const hue = 14 + t * 22;
   return `hsl(${hue}, 80%, ${lightness}%)`;
 }
 
@@ -27,7 +24,6 @@ const MusicVisualizer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sensitivity, setSensitivity] = useState(1.5);
   const [particleSize, setParticleSize] = useState(3);
-  const [theme, setTheme] = useState('aqua');
   const [vizStyle, setVizStyle] = useState('radial');
 
   const audioContextRef = useRef(null);
@@ -39,7 +35,6 @@ const MusicVisualizer = () => {
   // per play session) always reads the current values instead of stale ones.
   const sensitivityRef = useRef(sensitivity);
   const particleSizeRef = useRef(particleSize);
-  const themeRef = useRef(theme);
   const vizStyleRef = useRef(vizStyle);
 
   useEffect(() => {
@@ -48,9 +43,6 @@ const MusicVisualizer = () => {
   useEffect(() => {
     particleSizeRef.current = particleSize;
   }, [particleSize]);
-  useEffect(() => {
-    themeRef.current = theme;
-  }, [theme]);
   useEffect(() => {
     vizStyleRef.current = vizStyle;
   }, [vizStyle]);
@@ -86,8 +78,8 @@ const MusicVisualizer = () => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     // Draws a rotating radial burst of glowing particles connected by a
-    // faint web of lines, colored by the selected theme and driven by the
-    // current sensitivity/particle-size controls.
+    // faint web of lines, driven by the current sensitivity/particle-size
+    // controls.
     const drawRadial = (frameData) => {
       const canvas = document.getElementById('visualizerCanvas');
       const ctx = canvas.getContext('2d');
@@ -101,7 +93,6 @@ const MusicVisualizer = () => {
       const maxExtra = Math.min(w, h) * 0.32;
       const currentSensitivity = sensitivityRef.current;
       const currentSize = particleSizeRef.current;
-      const currentTheme = themeRef.current;
 
       rotationRef.current += 0.0015;
       const rotation = rotationRef.current;
@@ -135,7 +126,7 @@ const MusicVisualizer = () => {
 
       // Glowing particles
       points.forEach((p) => {
-        const color = getColor(currentTheme, p.value, p.t);
+        const color = getColor(p.value, p.t);
         ctx.save();
         ctx.shadowBlur = 12;
         ctx.shadowColor = color;
@@ -169,7 +160,6 @@ const MusicVisualizer = () => {
       const baseR = Math.min(w, h) * 0.26;
       const currentSensitivity = sensitivityRef.current;
       const currentSize = particleSizeRef.current;
-      const currentTheme = themeRef.current;
 
       rotationRef.current += 0.004;
       const rotation = rotationRef.current;
@@ -219,7 +209,7 @@ const MusicVisualizer = () => {
           if (i === 0) ctx.moveTo(p.x, p.y);
           else ctx.lineTo(p.x, p.y);
         }
-        ctx.strokeStyle = getColor(currentTheme, 0.5, j / lonSegments);
+        ctx.strokeStyle = getColor(0.5, j / lonSegments);
         ctx.globalAlpha = 0.8;
         ctx.stroke();
       }
@@ -232,7 +222,7 @@ const MusicVisualizer = () => {
           if (j === 0) ctx.moveTo(p.x, p.y);
           else ctx.lineTo(p.x, p.y);
         }
-        ctx.strokeStyle = getColor(currentTheme, 0.5, i / latSegments);
+        ctx.strokeStyle = getColor(0.5, i / latSegments);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
@@ -241,7 +231,7 @@ const MusicVisualizer = () => {
       grid.forEach((row) => {
         row.forEach((p) => {
           if (p.value > 0.55) {
-            const color = getColor(currentTheme, p.value, p.t);
+            const color = getColor(p.value, p.t);
             ctx.save();
             ctx.shadowBlur = 10;
             ctx.shadowColor = color;
@@ -270,7 +260,6 @@ const MusicVisualizer = () => {
       const baseRadius = Math.min(w, h) * 0.2;
       const maxExtra = Math.min(w, h) * 0.24;
       const currentSensitivity = sensitivityRef.current;
-      const currentTheme = themeRef.current;
 
       rotationRef.current += 0.001;
       const rotation = rotationRef.current;
@@ -293,8 +282,8 @@ const MusicVisualizer = () => {
       const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
       const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius + maxExtra);
-      gradient.addColorStop(0, getColor(currentTheme, 0.8, 0.5));
-      gradient.addColorStop(1, getColor(currentTheme, 0.2, 0.9));
+      gradient.addColorStop(0, getColor(0.8, 0.5));
+      gradient.addColorStop(1, getColor(0.2, 0.9));
 
       ctx.beginPath();
       const start = mid(points[pointCount - 1], points[0]);
@@ -308,7 +297,7 @@ const MusicVisualizer = () => {
 
       ctx.save();
       ctx.shadowBlur = 30;
-      ctx.shadowColor = getColor(currentTheme, 0.6, 0.5);
+      ctx.shadowColor = getColor(0.6, 0.5);
       ctx.fillStyle = gradient;
       ctx.globalAlpha = 0.85;
       ctx.fill();
@@ -334,7 +323,6 @@ const MusicVisualizer = () => {
       const maxLen = Math.min(w, h) * 0.32;
       const currentSensitivity = sensitivityRef.current;
       const currentSize = particleSizeRef.current;
-      const currentTheme = themeRef.current;
 
       rotationRef.current += 0.001;
       const rotation = rotationRef.current;
@@ -347,7 +335,7 @@ const MusicVisualizer = () => {
         const angle = (i / barCount) * Math.PI * 2 + rotation;
         const len = 4 + value * currentSensitivity * maxLen;
         const barWidth = Math.max(2, currentSize * 1.3);
-        const color = getColor(currentTheme, value, i / barCount);
+        const color = getColor(value, i / barCount);
 
         ctx.save();
         ctx.translate(cx, cy);
@@ -386,7 +374,6 @@ const MusicVisualizer = () => {
 
       const midY = h / 2;
       const currentSensitivity = sensitivityRef.current;
-      const currentTheme = themeRef.current;
       const n = frameData.length;
 
       rotationRef.current += 0.03;
@@ -405,7 +392,7 @@ const MusicVisualizer = () => {
       // Gradient fill beneath the line down to the bottom of the canvas
       const fillGradient = ctx.createLinearGradient(0, 0, w, 0);
       for (let i = 0; i <= 10; i++) {
-        fillGradient.addColorStop(i / 10, getColor(currentTheme, 0.5, i / 10));
+        fillGradient.addColorStop(i / 10, getColor(0.5, i / 10));
       }
 
       ctx.beginPath();
@@ -438,7 +425,7 @@ const MusicVisualizer = () => {
       ctx.lineWidth = 3;
       ctx.save();
       ctx.shadowBlur = 14;
-      ctx.shadowColor = getColor(currentTheme, 0.8, 0.5);
+      ctx.shadowColor = getColor(0.8, 0.5);
       ctx.stroke();
       ctx.restore();
     };
@@ -453,7 +440,6 @@ const MusicVisualizer = () => {
       const h = canvas.height;
       const currentSensitivity = sensitivityRef.current;
       const currentSize = particleSizeRef.current;
-      const currentTheme = themeRef.current;
       const n = frameData.length;
 
       if (!starsRef.current) {
@@ -481,7 +467,7 @@ const MusicVisualizer = () => {
         if (star.y > h) star.y -= h;
 
         const size = currentSize * 0.5 + value * currentSensitivity * currentSize * 1.5;
-        const color = getColor(currentTheme, value, star.t);
+        const color = getColor(value, star.t);
 
         ctx.save();
         ctx.shadowBlur = 8;
@@ -506,7 +492,6 @@ const MusicVisualizer = () => {
       ctx.clearRect(0, 0, w, h);
 
       const currentSensitivity = sensitivityRef.current;
-      const currentTheme = themeRef.current;
       const n = frameData.length;
 
       const cx = w / 2;
@@ -540,7 +525,7 @@ const MusicVisualizer = () => {
         const tipX = baseX + ndx * spikeLen;
         const tipY = baseY + ndy * spikeLen;
 
-        const color = getColor(currentTheme, value, rawT);
+        const color = getColor(value, rawT);
 
         ctx.save();
         ctx.shadowBlur = 8;
@@ -619,7 +604,7 @@ const MusicVisualizer = () => {
           padding: '10px',
           paddingTop: '60px',
           paddingBottom: '30px',
-          background: 'radial-gradient(circle at 50% 30%, #141414, #000)',
+          background: 'radial-gradient(circle at 50% 30%, #1c1c28, #0d0d14)',
           borderRadius: '20px',
           maxWidth: '500px',
         }}
@@ -706,7 +691,8 @@ const MusicVisualizer = () => {
             marginTop: '20px',
             padding: '16px 20px',
             borderRadius: '12px',
-            background: 'rgba(255, 255, 255, 0.06)',
+            background: '#1a1a24',
+            border: '1px solid rgba(255,255,255,0.06)',
             color: '#fff',
             textAlign: 'left',
           }}
@@ -725,8 +711,8 @@ const MusicVisualizer = () => {
                     minWidth: '110px',
                     padding: '8px 0',
                     borderRadius: '8px',
-                    border: vizStyle === s ? '2px solid #fff' : '1px solid rgba(255,255,255,0.25)',
-                    background: vizStyle === s ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    border: vizStyle === s ? `2px solid ${ACCENT}` : '1px solid rgba(255,255,255,0.12)',
+                    background: vizStyle === s ? 'rgba(232, 146, 124, 0.15)' : '#242430',
                     color: '#fff',
                     cursor: 'pointer',
                   }}
@@ -748,11 +734,11 @@ const MusicVisualizer = () => {
               step="0.1"
               value={sensitivity}
               onChange={(e) => setSensitivity(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
+              style={{ width: '100%', accentColor: ACCENT }}
             />
           </div>
 
-          <div style={{ marginBottom: '14px' }}>
+          <div>
             <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '6px' }}>
               Particle Size
             </label>
@@ -763,34 +749,8 @@ const MusicVisualizer = () => {
               step="0.5"
               value={particleSize}
               onChange={(e) => setParticleSize(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
+              style={{ width: '100%', accentColor: ACCENT }}
             />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '8px' }}>
-              Color Theme
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {THEMES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTheme(t)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 0',
-                    borderRadius: '8px',
-                    border: theme === t ? '2px solid #fff' : '1px solid rgba(255,255,255,0.25)',
-                    background: theme === t ? 'rgba(255,255,255,0.15)' : 'transparent',
-                    color: '#fff',
-                    textTransform: 'capitalize',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </div>

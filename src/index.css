@@ -24,9 +24,9 @@ code {
 }
 
 .blob.white {
-  background: transparent;
-  box-shadow: 0 0 0 0 rgba(255, 255, 255, 1);
-  border: 2px solid white;
+  background: #e8927c;
+  box-shadow: 0 0 0 0 rgba(232, 146, 124, 1);
+  border: none;
   animation: pulse-white 2s infinite;
 }
 
@@ -41,16 +41,16 @@ code {
 @keyframes pulse-white {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0 0 rgba(232, 146, 124, 0.7);
   }
 
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 10px rgba(232, 146, 124, 0);
   }
 
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 0 rgba(232, 146, 124, 0);
   }
 }
