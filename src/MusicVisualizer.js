@@ -512,49 +512,59 @@ const MusicVisualizer = () => {
       const currentTheme = themeRef.current;
       const n = frameData.length;
 
-      const barCount = 56;
-      const gap = 3;
-      const barWidth = w / barCount - gap;
-      const baseline = h * 0.68;
-      const maxBarHeight = h * 0.6;
+      const cx = w / 2;
+      const cy = h * 0.56;
+      const rx = w * 0.36;
+      const ry = h * 0.12;
+      const maxSpike = h * 0.48;
+      const points = 200;
 
-      for (let i = 0; i < barCount; i++) {
-        const value = frameData[Math.floor((i / barCount) * n)] / 255;
-        const barHeight = Math.max(3, value * currentSensitivity * maxBarHeight);
-        const x = i * (barWidth + gap);
-        const color = getColor(currentTheme, value, i / barCount);
+      for (let i = 0; i < points; i++) {
+        // Fold the sweep so both halves of the ellipse mirror each other,
+        // producing a symmetric left/right pattern like a real 3D ring.
+        const rawT = i / points;
+        const foldedT = rawT <= 0.5 ? rawT * 2 : (1 - rawT) * 2;
+        const binIndex = Math.min(n - 1, Math.floor(foldedT * (n - 1)));
+        const value = frameData[binIndex] / 255;
 
-        // Main bar, gradient bottom (dim) to top (bright)
-        const grad = ctx.createLinearGradient(0, baseline, 0, baseline - barHeight);
-        grad.addColorStop(0, getColor(currentTheme, value * 0.5, i / barCount));
-        grad.addColorStop(1, color);
+        const angle = rawT * Math.PI * 2 - Math.PI / 2;
+        const baseX = cx + Math.cos(angle) * rx;
+        const baseY = cy + Math.sin(angle) * ry;
+
+        // Direction follows the ellipse's outward normal: vertical at the
+        // top/bottom (crown spikes), horizontal at the sides (fanned spikes).
+        const dirX = Math.cos(angle) * rx;
+        const dirY = Math.sin(angle) * ry;
+        const dirLen = Math.hypot(dirX, dirY) || 1;
+        const ndx = dirX / dirLen;
+        const ndy = dirY / dirLen;
+
+        const spikeLen = Math.max(2, value * currentSensitivity * maxSpike);
+        const tipX = baseX + ndx * spikeLen;
+        const tipY = baseY + ndy * spikeLen;
+
+        const color = getColor(currentTheme, value, rawT);
 
         ctx.save();
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 8;
         ctx.shadowColor = color;
-        ctx.fillStyle = grad;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(x, baseline - barHeight, barWidth, barHeight, [3, 3, 0, 0]);
-        ctx.fill();
+        ctx.moveTo(baseX, baseY);
+        ctx.lineTo(tipX, tipY);
+        ctx.stroke();
         ctx.restore();
 
-        // Faded mirrored reflection below the baseline
-        const reflectHeight = barHeight * 0.4;
+        // Thin rainbow-dotted ring tracing the ellipse base
         ctx.save();
-        ctx.globalAlpha = 0.25;
         ctx.fillStyle = color;
+        ctx.globalAlpha = 0.85;
         ctx.beginPath();
-        ctx.roundRect(x, baseline + 4, barWidth, reflectHeight, [0, 0, 3, 3]);
+        ctx.arc(baseX, baseY, 1.4, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
-
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(0, baseline);
-      ctx.lineTo(w, baseline);
-      ctx.stroke();
     };
 
     const updateFrames = () => {
