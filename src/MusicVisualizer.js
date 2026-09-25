@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const STYLES = ['radial', 'sphere', 'blob', 'bars', 'wave', 'starfield', 'spectrum'];
+const STYLES = ['radial', 'sphere', 'bars', 'wave', 'starfield', 'spectrum'];
 const STYLE_LABELS = {
   radial: 'Radial Burst',
   sphere: 'Sphere',
-  blob: 'Blob',
   bars: 'Circular Bars',
   wave: 'Waveform',
   starfield: 'Starfield',
@@ -243,69 +242,6 @@ const MusicVisualizer = () => {
           }
         });
       });
-    };
-
-    // Draws a smooth, filled, morphing blob (no individual dots/wireframe)
-    // by fitting a rounded curve through downsampled frequency points and
-    // filling it with a soft radial gradient.
-    const drawBlob = (frameData) => {
-      const canvas = document.getElementById('visualizerCanvas');
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const baseRadius = Math.min(w, h) * 0.2;
-      const maxExtra = Math.min(w, h) * 0.24;
-      const currentSensitivity = sensitivityRef.current;
-
-      rotationRef.current += 0.001;
-      const rotation = rotationRef.current;
-
-      // Downsample to a small point count so the curve reads as smooth.
-      const pointCount = 28;
-      const n = frameData.length;
-      const points = new Array(pointCount);
-      for (let i = 0; i < pointCount; i++) {
-        const value = frameData[Math.floor((i / pointCount) * n)] / 255;
-        const angle = (i / pointCount) * Math.PI * 2 + rotation;
-        const r = baseRadius + value * currentSensitivity * maxExtra;
-        points[i] = {
-          x: cx + r * Math.cos(angle),
-          y: cy + r * Math.sin(angle),
-          t: i / pointCount,
-        };
-      }
-
-      const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-
-      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius + maxExtra);
-      gradient.addColorStop(0, getColor(0.8, 0.5));
-      gradient.addColorStop(1, getColor(0.2, 0.9));
-
-      ctx.beginPath();
-      const start = mid(points[pointCount - 1], points[0]);
-      ctx.moveTo(start.x, start.y);
-      for (let i = 0; i < pointCount; i++) {
-        const next = points[(i + 1) % pointCount];
-        const m = mid(points[i], next);
-        ctx.quadraticCurveTo(points[i].x, points[i].y, m.x, m.y);
-      }
-      ctx.closePath();
-
-      ctx.save();
-      ctx.shadowBlur = 30;
-      ctx.shadowColor = getColor(0.6, 0.5);
-      ctx.fillStyle = gradient;
-      ctx.globalAlpha = 0.85;
-      ctx.fill();
-      ctx.restore();
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
     };
 
     // Draws classic thick rounded bars radiating from a center ring, like
@@ -554,8 +490,6 @@ const MusicVisualizer = () => {
       const style = vizStyleRef.current;
       if (style === 'sphere') {
         drawSphere(dataArray);
-      } else if (style === 'blob') {
-        drawBlob(dataArray);
       } else if (style === 'bars') {
         drawBars(dataArray);
       } else if (style === 'wave') {
@@ -602,95 +536,60 @@ const MusicVisualizer = () => {
           marginLeft: 'auto',
           marginRight: 'auto',
           padding: '10px',
-          paddingTop: '60px',
-          paddingBottom: '30px',
+          paddingTop: '24px',
+          paddingBottom: '24px',
           background: 'radial-gradient(circle at 50% 30%, #1c1c28, #0d0d14)',
           borderRadius: '20px',
           maxWidth: '500px',
         }}
       >
-        {isPlaying ? (
-          <button className="btn" onClick={() => togglePlay()}>
-            <div className="flex">
-              <div className="blob white">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="32"
-                  fill="#fff"
-                  className="bi bi-pause-fill"
-                  viewBox="2 0 13 9"
-                >
-                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
-                </svg>
-              </div>
-              <div className="btn-label">Stop</div>
-            </div>
-          </button>
-        ) : (
-          <button className="btn" onClick={() => togglePlay()}>
-            <div className="flex">
-              <div className="blob white">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="32"
-                  fill="#fff"
-                  className="bi bi-play-fill"
-                  viewBox="0 0 14 8"
-                >
-                  <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                </svg>
-              </div>
-              <div className="btn-label">Start</div>
-            </div>
-          </button>
-        )}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <canvas id="visualizerCanvas" width="340" height="340" style={{ display: 'block' }}></canvas>
+        </div>
 
-        <div style={{ paddingTop: '30px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <canvas id="visualizerCanvas" width="460" height="460" style={{ display: 'block' }}></canvas>
-            {vizStyle === 'bars' && (
-              <button
-                onClick={() => togglePlay()}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '96px',
-                  height: '96px',
-                  borderRadius: '50%',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                }}
-              >
-                {isPlaying ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" fill="#fff" viewBox="2 0 13 9">
+        <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'center' }}>
+          {isPlaying ? (
+            <button className="btn" onClick={() => togglePlay()}>
+              <div className="flex">
+                <div className="blob white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="32"
+                    fill="#fff"
+                    className="bi bi-pause-fill"
+                    viewBox="2 0 13 9"
+                  >
                     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
                   </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" fill="#fff" viewBox="0 0 14 8">
+                </div>
+                <div className="btn-label">Stop</div>
+              </div>
+            </button>
+          ) : (
+            <button className="btn" onClick={() => togglePlay()}>
+              <div className="flex">
+                <div className="blob white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="32"
+                    fill="#fff"
+                    className="bi bi-play-fill"
+                    viewBox="0 0 14 8"
+                  >
                     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                   </svg>
-                )}
-                <span style={{ fontSize: '9px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#fff', opacity: 0.6 }}>
-                  {isPlaying ? 'Pause' : 'Play'}
-                </span>
-              </button>
-            )}
-          </div>
+                </div>
+                <div className="btn-label">Start</div>
+              </div>
+            </button>
+          )}
         </div>
 
         <div
           style={{
-            marginTop: '20px',
+            marginTop: '16px',
             padding: '16px 20px',
             borderRadius: '12px',
             background: '#1a1a24',
