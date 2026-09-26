@@ -21,7 +21,7 @@ const MusicVisualizer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sensitivity, setSensitivity] = useState(1.5);
   const [particleSize, setParticleSize] = useState(3);
-  const [vizStyle, setVizStyle] = useState('radial');
+  const [vizStyle, setVizStyle] = useState('sphere');
 
   const audioContextRef = useRef(null);
   const sourceRef = useRef(null);
@@ -445,7 +445,6 @@ const MusicVisualizer = () => {
                     fill={ACCENT}
                     className="bi bi-pause-fill"
                     viewBox="2 0 13 9"
-                    style={{ position: 'relative', top: '2px' }}
                   >
                     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
                   </svg>
@@ -457,7 +456,6 @@ const MusicVisualizer = () => {
                     fill={ACCENT}
                     className="bi bi-play-fill"
                     viewBox="0 0 14 8"
-                    style={{ position: 'relative', top: '2px' }}
                   >
                     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                   </svg>
