@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const STYLES = ['radial', 'sphere', 'bars', 'wave', 'spectrum'];
+const STYLES = ['sphere', 'bars', 'wave', 'radial'];
 const STYLE_LABELS = {
-  radial: 'Radial Burst',
   sphere: 'Sphere',
   bars: 'Circular Bars',
   wave: 'Waveform',
-  spectrum: 'Spectrum',
+  radial: 'Radial Burst',
 };
 
 // Single coral/orange accent family, matching the app's UI palette.
@@ -364,74 +363,6 @@ const MusicVisualizer = () => {
       ctx.restore();
     };
 
-    // Draws a classic linear spectrum analyzer: vertical bars across the
-    // full width, colored bottom-to-top per bar, with a faded mirrored
-    // reflection below the baseline.
-    const drawSpectrum = (frameData) => {
-      const canvas = document.getElementById('visualizerCanvas');
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      const currentSensitivity = sensitivityRef.current;
-      const n = frameData.length;
-
-      const cx = w / 2;
-      const cy = h * 0.56;
-      const rx = w * 0.36;
-      const ry = h * 0.12;
-      const maxSpike = h * 0.48;
-      const points = 200;
-
-      for (let i = 0; i < points; i++) {
-        // Fold the sweep so both halves of the ellipse mirror each other,
-        // producing a symmetric left/right pattern like a real 3D ring.
-        const rawT = i / points;
-        const foldedT = rawT <= 0.5 ? rawT * 2 : (1 - rawT) * 2;
-        const binIndex = Math.min(n - 1, Math.floor(foldedT * (n - 1)));
-        const value = frameData[binIndex] / 255;
-
-        const angle = rawT * Math.PI * 2 - Math.PI / 2;
-        const baseX = cx + Math.cos(angle) * rx;
-        const baseY = cy + Math.sin(angle) * ry;
-
-        // Direction follows the ellipse's outward normal: vertical at the
-        // top/bottom (crown spikes), horizontal at the sides (fanned spikes).
-        const dirX = Math.cos(angle) * rx;
-        const dirY = Math.sin(angle) * ry;
-        const dirLen = Math.hypot(dirX, dirY) || 1;
-        const ndx = dirX / dirLen;
-        const ndy = dirY / dirLen;
-
-        const spikeLen = Math.max(2, value * currentSensitivity * maxSpike);
-        const tipX = baseX + ndx * spikeLen;
-        const tipY = baseY + ndy * spikeLen;
-
-        const color = getColor(value, rawT);
-
-        ctx.save();
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = color;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(baseX, baseY);
-        ctx.lineTo(tipX, tipY);
-        ctx.stroke();
-        ctx.restore();
-
-        // Thin rainbow-dotted ring tracing the ellipse base
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.85;
-        ctx.beginPath();
-        ctx.arc(baseX, baseY, 1.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    };
-
     const updateFrames = () => {
       analyser.getByteFrequencyData(dataArray);
       const style = vizStyleRef.current;
@@ -441,8 +372,6 @@ const MusicVisualizer = () => {
         drawBars(dataArray);
       } else if (style === 'wave') {
         drawWave(dataArray);
-      } else if (style === 'spectrum') {
-        drawSpectrum(dataArray);
       } else {
         drawRadial(dataArray);
       }
@@ -485,7 +414,7 @@ const MusicVisualizer = () => {
           paddingBottom: '24px',
           background: 'radial-gradient(circle at 50% 30%, #1c1c28, #0d0d14)',
           borderRadius: '20px',
-          maxWidth: '500px',
+          maxWidth: '720px',
         }}
       >
         <div style={{ position: 'relative', width: '340px', height: '436px', margin: '0 auto' }}>
@@ -554,14 +483,13 @@ const MusicVisualizer = () => {
             <label style={{ display: 'block', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7, marginBottom: '8px' }}>
               Visualization Style
             </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
               {STYLES.map((s) => (
                 <button
                   key={s}
                   onClick={() => setVizStyle(s)}
                   style={{
-                    flex: '1 1 30%',
-                    minWidth: '100px',
+                    flex: '1 1 0',
                     padding: '5px 0',
                     borderRadius: '8px',
                     border: vizStyle === s ? `2px solid ${ACCENT}` : '1px solid rgba(255,255,255,0.12)',
