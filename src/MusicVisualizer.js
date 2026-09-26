@@ -488,53 +488,60 @@ const MusicVisualizer = () => {
           maxWidth: '500px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <canvas id="visualizerCanvas" width="340" height="340" style={{ display: 'block' }}></canvas>
-        </div>
-
-        <div style={{ paddingTop: '16px', display: 'flex', justifyContent: 'center' }}>
-          {isPlaying ? (
-            <button className="btn" onClick={() => togglePlay()}>
-              <div className="flex">
-                <div className="blob white">
+        <div style={{ position: 'relative', width: '340px', height: '436px', margin: '0 auto' }}>
+          <canvas
+            id="visualizerCanvas"
+            width="340"
+            height="340"
+            style={{ position: 'absolute', top: 0, left: 0, display: 'block' }}
+          ></canvas>
+          <button
+            className="btn"
+            onClick={() => togglePlay()}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: isPlaying ? '388px' : '170px',
+              transform: 'translate(-50%, -50%)',
+              transition: 'top 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
+            <div className="flex">
+              <div className="blob white">
+                {isPlaying ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="32"
-                    fill="#fff"
+                    fill={ACCENT}
                     className="bi bi-pause-fill"
                     viewBox="2 0 13 9"
+                    style={{ position: 'relative', top: '2px' }}
                   >
                     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
                   </svg>
-                </div>
-                <div className="btn-label">Stop</div>
-              </div>
-            </button>
-          ) : (
-            <button className="btn" onClick={() => togglePlay()}>
-              <div className="flex">
-                <div className="blob white">
+                ) : (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="32"
-                    fill="#fff"
+                    fill={ACCENT}
                     className="bi bi-play-fill"
                     viewBox="0 0 14 8"
+                    style={{ position: 'relative', top: '2px' }}
                   >
                     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                   </svg>
-                </div>
-                <div className="btn-label">Start</div>
+                )}
               </div>
-            </button>
-          )}
+              <div className="btn-label">{isPlaying ? 'Pause' : 'Start'}</div>
+            </div>
+          </button>
         </div>
 
         <div
           style={{
-            marginTop: '32px',
+            marginTop: '12px',
             padding: '16px 20px',
             borderRadius: '12px',
             background: '#1a1a24',
@@ -554,12 +561,14 @@ const MusicVisualizer = () => {
                   onClick={() => setVizStyle(s)}
                   style={{
                     flex: '1 1 30%',
-                    minWidth: '110px',
-                    padding: '8px 0',
+                    minWidth: '100px',
+                    padding: '5px 0',
                     borderRadius: '8px',
                     border: vizStyle === s ? `2px solid ${ACCENT}` : '1px solid rgba(255,255,255,0.12)',
                     background: vizStyle === s ? 'rgba(232, 146, 124, 0.15)' : '#242430',
                     color: '#fff',
+                    fontFamily: "'Courier New', Courier, monospace",
+                    fontSize: '13px',
                     cursor: 'pointer',
                   }}
                 >
